@@ -1,0 +1,19 @@
+name: umi
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bcftools
+  - bwa
+  - cutadapt
+  - filtlong
+  - gawk
+  - medaka
+  - minimap2
+  - parallel
+  - porechop
+  - racon
+  - samtools
+  - seqtk
+  - vsearch

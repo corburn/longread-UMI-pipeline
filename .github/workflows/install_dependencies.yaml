@@ -1,0 +1,20 @@
+on: ['push']
+# https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#example-including-paths
+#on:
+#  push:
+#    paths:
+#      - 'scripts/install_dependencies.sh'
+
+jobs:
+  auto_install:
+    runs-on: ubuntu-latest
+    #container: continuumio/miniconda3
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          mkdir usearch
+          touch usearch/usearch
+          chmod a+x usearch/usearch
+          ln -s longread_umi.sh longread_umi
+          echo "::add-path::${PWD}"
+      - run: bash ./scripts/install_dependencies.sh
