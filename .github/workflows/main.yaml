@@ -1,0 +1,15 @@
+on: [push]
+
+jobs:
+  auto_install:
+    runs-on: ubuntu-latest
+    #container: continuumio/miniconda3
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          mkdir usearch
+          touch usearch/usearch
+          chmod a+x usearch/usearch
+          ln -s longread_umi.sh longread_umi
+          echo "::add-path::${PWD}"
+      - run: bash ./scripts/install_dependencies.sh
