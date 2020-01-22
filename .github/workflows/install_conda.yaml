@@ -3,61 +3,9 @@ on: ['push']
 #on:
 #  push:
 #    paths:
-#      - 'scripts/install_dependencies.sh'
+#      - 'scripts/install_conda.sh'
 
 jobs:
-#  conda_install:
-#    runs-on: ubuntu-latest
-#    container:
-#      image: continuumio/miniconda3
-#      volumes:
-#        - conda_environment:/conda
-#      env:
-#        # https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/use-condarc.html
-#        CONDA_ENVS_PATH: /conda/envs
-#        CONDA_PKGS_DIRS: /conda/pkgs
-#    steps:
-#      - uses: actions/checkout@v2
-#      # samtools build fails without ncurses
-#      #- run: |
-#      #   sudo apt update
-#      #   sudo apt install -y ncurses-dev
-#      #- run: |
-#      #    mkdir usearch
-#      #    touch usearch/usearch
-#      #    chmod a+x usearch/usearch
-#      #    ln -s longread_umi.sh longread_umi
-#      #    echo "::add-path::${PWD}"
-#      - run: echo "::add-path::${PWD}"
-#      - name: create conda environment
-#        # NOTE: the `conda shell.bash hook` changes do not persist between steps
-#        # https://docs.anaconda.com/anaconda/install/silent-mode/#linux-macos
-#        #
-#        # ==> WARNING: A newer version of conda exists. <==
-#        #  current version: 4.7.12
-#        #  latest version: 4.8.1
-#        #
-#        # Please update conda by running
-#        #
-#        #    $ conda update -n base -c defaults conda
-#        #
-#        #
-#        ##
-#        ## To activate this environment, use
-#        ##
-#        ##     $ conda activate longread_umi
-#        ##
-#        ## To deactivate an active environment, use
-#        ##
-#        ##     $ conda deactivate
-#        run: |
-#          eval "$($(which conda) shell.bash hook)"
-#          env
-#          conda env create -q -n longread_umi -f environment.yml
-#          conda env list
-#          conda config --show
-#          ls -al /conda
-
   nanopore_pipeline:
     runs-on: ubuntu-latest
     container: continuumio/miniconda3
@@ -78,11 +26,7 @@ jobs:
         # -p is missing but required. Exiting.
         # . exists. Remove existing directory or rename desired output directory. (replace -o ./ with -o ./output)
         run: |
-          echo $PATH
-          ls -al ..
-          ../usearch
-          usearch
-          which usearch
+          set -x
           eval "$($(which conda) shell.bash hook)"
           conda activate longread_umi
           longread_umi nanopore_pipeline \
@@ -90,11 +34,12 @@ jobs:
             -o ./output \
             -v 30 \
             -w rrna_operon \
-            -t 1 \
+            -p 1 \
             -q r941_min_high_g303 \
-            -c 3
+            -c 3 \
+            -t 1
 
-  qc_pipline:
+  qc_pipeline:
     runs-on: ubuntu-latest
     container: continuumio/miniconda3
     steps:
@@ -112,7 +57,7 @@ jobs:
       - working-directory: test_data
         name: longread_umi qc_pipeline
         run: |
-          which usearch
+          set -x
           eval "$($(which conda) shell.bash hook)"
           conda activate longread_umi
           longread_umi qc_pipeline -d test_reads.fq -c consensus_raconx3_medakax1.fa -r zymo_curated -t 1
