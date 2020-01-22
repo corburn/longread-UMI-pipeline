@@ -1,0 +1,104 @@
+# TODO: Deduplicate the conda install step. Extract it as a job the pipeline jobs depend on.
+#
+# Enable xtrace to print commands as they execute.
+# set -x
+#
+# Append the repository directory to the PATH environment variable.
+# https://help.github.com/en/actions/automating-your-workflow-with-github-actions/development-tools-for-github-actions#add-a-system-path-add-path
+# echo "::add-path::${PWD}"
+#
+# Initialize conda in the current shell.
+# https://docs.anaconda.com/anaconda/install/silent-mode/#linux-macos
+# eval "$($(which conda) shell.bash hook)"
+#
+# FIXME: Install vsearch as a placeholder for usearch.
+# conda create -q -y -n vsearch -c conda-forge -c bioconda vsearch
+# conda activate vsearch
+# ln -s $(which vsearch) ./usearch
+#
+# Install pipeline dependencies
+# conda env create -q -n longread_umi -f environment.yml
+# ln -s longread_umi.sh longread_umi
+#
+# Replace porechop adapters.py
+# porechop_adapter=${CONDA_PREFIX}/lib/python3.*/site-packages/porechop/adapters.py
+# mv ${porechop_adapter} ${porechop_adapter}.orig
+# cp ./scripts/adapters.py ${porechop_adapter}
+
+on: ['push']
+
+jobs:
+  nanopore_pipeline:
+    runs-on: ubuntu-latest
+    container: continuumio/miniconda3
+    steps:
+      - uses: actions/checkout@v2
+      - name: conda install
+        run: |
+          set -x
+          echo "::add-path::${PWD}"
+          eval "$($(which conda) shell.bash hook)"
+          conda create -q -y -n vsearch -c conda-forge -c bioconda vsearch
+          conda activate vsearch
+          ln -s $(which vsearch) ./usearch
+          conda env create -q -n longread_umi -f environment.yml
+          ln -s longread_umi.sh longread_umi
+          porechop_adapter=( ${CONDA_PREFIX}/lib/python3.*/site-packages/porechop/adapters.py )
+          porechop_adapter="${porechop_adapter[0]}"
+          mv ${porechop_adapter} ${porechop_adapter}.orig
+          cp ./scripts/adapters.py ${porechop_adapter}
+      - working-directory: test_data
+        name: longread_umi nanopore_pipeline
+        # FIXME: the following flags are required by the script, but not included in the README example usage.
+        # -c is missing but required. Exiting.
+        # -p is missing but required. Exiting.
+        run: |
+          set -x
+          eval "$($(which conda) shell.bash hook)"
+          conda activate longread_umi
+          longread_umi nanopore_pipeline \
+            -d test_reads.fq \
+            -o ./output \
+            -v 30 \
+            -w rrna_operon \
+            -p 1 \
+            -q r941_min_high_g303 \
+            -c 3 \
+            -t 1
+        # TODO: assert expected output
+        #
+        # consensus_raconx3_medakax1.fa containing 8 UMI consensus sequences
+        # variants.fa containing 2 variant consensus sequences
+
+  qc_pipeline:
+    runs-on: ubuntu-latest
+    container: continuumio/miniconda3
+    steps:
+      - uses: actions/checkout@v2
+      - name: conda install
+        run: |
+          set -x
+          echo "::add-path::${PWD}"
+          eval "$($(which conda) shell.bash hook)"
+          conda create -q -y -n vsearch -c conda-forge -c bioconda vsearch
+          conda activate vsearch
+          ln -s $(which vsearch) ./usearch
+          conda env create -q -n longread_umi -f environment.yml
+          conda activate longread_umi
+          ln -s longread_umi.sh longread_umi
+          porechop_adapter=( ${CONDA_PREFIX}/lib/python3.*/site-packages/porechop/adapters.py )
+          porechop_adapter="${porechop_adapter[0]}"
+          mv ${porechop_adapter} ${porechop_adapter}.orig
+          cp ./scripts/adapters.py ${porechop_adapter}
+      - working-directory: test_data
+        name: longread_umi qc_pipeline
+        run: |
+          set -x
+          eval "$($(which conda) shell.bash hook)"
+          conda activate longread_umi
+          longread_umi qc_pipeline \
+            -d test_reads.fq \
+            -c consensus_raconx3_medakax1.fa \
+            -r zymo_curated \
+            -t 1
+        # TODO: assert expected output
