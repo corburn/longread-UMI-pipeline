@@ -33,6 +33,11 @@ jobs:
     container: continuumio/miniconda3
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          repository: 'rrwick/Porechop'
+          ref: 'v0.2.4'
+          path: 'Porechop'
       - name: conda install
         run: |
           set -x
@@ -43,10 +48,15 @@ jobs:
           ln -s $(which vsearch) ./usearch
           conda env create -q -n longread_umi -f environment.yml
           ln -s longread_umi.sh longread_umi
-          porechop_adapter=( ${CONDA_PREFIX}/lib/python3.*/site-packages/porechop/adapters.py )
-          porechop_adapter="${porechop_adapter[0]}"
-          mv ${porechop_adapter} ${porechop_adapter}.orig
-          cp ./scripts/adapters.py ${porechop_adapter}
+      - name: python -m pip install Porechop (with custom adapters.py)
+        run: |
+          set -x
+          ls -al
+          eval "$($(which conda) shell.bash hook)"
+          conda activate longread_umi
+          cp ./scripts/adapters.py Porechop/porechop/adapters.py
+          python -m pip install ./Porechop/setup.py
+          porechop -h
       - working-directory: test_data
         name: longread_umi nanopore_pipeline
         # FIXME: the following flags are required by the script, but not included in the README example usage.
@@ -58,13 +68,20 @@ jobs:
           conda activate longread_umi
           longread_umi nanopore_pipeline \
             -d test_reads.fq \
-            -o ./output \
             -v 30 \
-            -w rrna_operon \
-            -p 1 \
-            -q r941_min_high_g303 \
+            -o test \
+            -s 90 \
+            -e 90 \
+            -m 3500 \
+            -M 6000 \
+            -f CAAGCAGAAGACGGCATACGAGAT \
+            -F AGRGTTYGATYMTGGCTCAG \
+            -r AATGATACGGCGACCACCGAGATC \
+            -R CGACATCGAGGTGCCAAAC \
             -c 3 \
-            -t 1
+            -p 1 \
+            -q r941_min_high_g330 \
+            -t $(nproc)
         # TODO: assert expected output
         #
         # consensus_raconx3_medakax1.fa containing 8 UMI consensus sequences
@@ -75,6 +92,11 @@ jobs:
     container: continuumio/miniconda3
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          repository: 'rrwick/Porechop'
+          ref: 'v0.2.4'
+          path: 'Porechop'
       - name: conda install
         run: |
           set -x
@@ -86,10 +108,13 @@ jobs:
           conda env create -q -n longread_umi -f environment.yml
           conda activate longread_umi
           ln -s longread_umi.sh longread_umi
-          porechop_adapter=( ${CONDA_PREFIX}/lib/python3.*/site-packages/porechop/adapters.py )
-          porechop_adapter="${porechop_adapter[0]}"
-          mv ${porechop_adapter} ${porechop_adapter}.orig
-          cp ./scripts/adapters.py ${porechop_adapter}
+      - name: python -m pip install Porechop (with custom adapters.py)
+        run: |
+          eval "$($(which conda) shell.bash hook)"
+          conda activate longread_umi
+          cp ./scripts/adapters.py Porechop/porechop/adapters.py
+          python -m pip install Porechop
+          porechop -h
       - working-directory: test_data
         name: longread_umi qc_pipeline
         run: |
