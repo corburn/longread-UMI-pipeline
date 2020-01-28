@@ -56,6 +56,7 @@ jobs:
       - name: Install racon
         working-directory: racon
         run: |
+          apt update && apt install -y cmake g++
           mkdir build
           cd build
           cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -75,6 +76,7 @@ jobs:
         run: |
           set -x
           ls -al
+          ls -al Porechop
           eval "$($(which conda) shell.bash hook)"
           conda activate longread_umi
           cp ./scripts/adapters.py Porechop/porechop/adapters.py
@@ -135,7 +137,7 @@ jobs:
         run: |
           eval "$($(which conda) shell.bash hook)"
           conda activate longread_umi
-          cp ./scripts/adapters.py Porechop/porechop/adapters.py
+          cp ./scripts/adapters.py ./Porechop/porechop/adapters.py
           python -m pip install Porechop
           porechop -h
       - working-directory: test_data
