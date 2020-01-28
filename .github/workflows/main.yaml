@@ -38,6 +38,29 @@ jobs:
           repository: 'rrwick/Porechop'
           ref: 'v0.2.4'
           path: 'Porechop'
+      - uses: actions/checkout@v2
+        with:
+          repository: 'lbcb-sci/racon'
+          ref: '1.4.10'
+          path: 'racon'
+      - name: Checkout submodules
+        shell: bash
+        working-directory: racon
+        run: |
+          auth_header="$(git config --local --get http.https://github.com/.extraheader)"
+          git submodule sync --recursive
+          git \
+            -c "http.extraheader=$auth_header" \
+            -c protocol.version=2 submodule update \
+            --init --force --recursive --depth=1
+      - name: Install racon
+        working-directory: racon
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make
+          echo "::add-path::${PWD}/bin"
       - name: conda install
         run: |
           set -x
